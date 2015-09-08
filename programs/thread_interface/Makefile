@@ -1,9 +1,9 @@
-CC=clang
-INCLUDE=$(shell pkg-config --cflags glib-2.0) -I/usr/local/opt/gettext/include
+CC=gcc
+INCLUDE=$(shell pkg-config --cflags glib-2.0)
 
-CFLAGS=-g -O2 -Wall -Wextra -Isrc $(INCLUDE) -DNDEBUG $(OPTFLAGS)
+CFLAGS=-g -O2 -Wall -Wextra -Isrc -DNDEBUG $(OPTFLAGS) $(INCLUDE)
 
-LD_FLAGS=-ldl $(OPTLIBS) $(shell pkg-config --libs glib-2.0) -L/usr/local/opt/gettext/lib
+LDFLAGS=-ldl $(OPTLIBS) $(shell pkg-config --libs glib-2.0)
 PREFIX=./build
 
 SOURCES=$(wildcard src/**/*.c src/*.c)
@@ -13,7 +13,7 @@ TEST_SRC=$(wilcard tests/*_tests.c)
 TESTS=$(patsubst %.c,%,$(TEST_SRC))
 
 TARGET=build/libunmthread.a
-# SO_TARGET=$(patsubst %.a,%.so,$(TARGET))
+#SO_TARGET=$(patsubst %.a,%.so,$(TARGET))
 EXECUTEABLE=threads
 
 
@@ -21,7 +21,7 @@ EXECUTEABLE=threads
 # The Target Build
 all: $(TARGET) $(EXECUTEABLE)
 
-dev: CFLAGS=-g -Wall -Isrc -Wextra $(OPTFLAGS) $(INCLUDE)
+dev: CFLAGS=-v -g -Wall -Isrc -Wextra $(OPTFLAGS) $(INCLUDE)
 dev: all
 
 $(TARGET): CFLAGS += -fPIC
@@ -30,11 +30,11 @@ $(TARGET): build $(OBJECTS)
 	ranlib $@
 
 $(SO_TARGET): $(TARGET) $(OBJECTS)
-	$(CC) -shared -o $@ $(OBJECTS) -o $(EXECUTEABLE)
+	$(CC) -v $(EXECUTEABLE) -shared -o $@ $(OBJECTS) -o 
 
 
 $(EXECUTEABLE): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $@
+	$(CC) -v $(OBJECTS) -o $@ $(LDFLAGS)
 
 build:
 	@mkdir -p build
