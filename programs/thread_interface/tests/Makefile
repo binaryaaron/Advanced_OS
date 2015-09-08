@@ -5,7 +5,7 @@ TGT_SRC     =    $(wildcard ../src/**/*.c ../src/*.c)
 
 OPT         =    -O2 -fprofile-arcs -ftest-coverage
 ERR         =    -Wall
-INC_PATH    =    -I. -I../build
+INC_PATH    =    -I.
 LIB_PATH    =    -L../build
 LD_PATH     =     ../build
 
@@ -15,7 +15,7 @@ RM          =    rm -f
 
 # NOTE: check libs must be enclosed by --whole-archive directives
 CHECK_LIBS  =    -Wl,--whole-archive -lcheck -Wl,--no-whole-archive
-LIBS        =    -lm $(CHECK_LIBS)
+LIBS        =    -lm $(CHECK_LIBS) -lunmthread
 
 # NOTE: UNIT_TEST enables the static-function test case in stuff.c
 CC_FLAGS    =     $(INC_PATH) $(OPT) $(ERR) -DUNIT_TEST
@@ -45,7 +45,7 @@ $(TEST1): $(TEST1_SRC)
 	$(CC) $(TEST1_FLAGS) -o $@ $^ $(TEST1_LIBS)
 
 
-check:
+check: all
 	@for t in $(TESTS); do                          \
 	LD_LIBRARY_PATH='$(LD_PATH)' ./$$t;     \
 	done

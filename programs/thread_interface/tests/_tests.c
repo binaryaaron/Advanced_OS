@@ -1,6 +1,9 @@
-#include <unmthread.h>
+#include <stdio.h>
 
 int main(void)
 {
-  return (int) do_stuff( 32.0 );
+  int i = 0;
+  i = unmthread_yield();
+  printf("blah");
+  return 0;
 }

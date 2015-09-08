@@ -1,5 +1,9 @@
-CFLAGS=-g -O2 -Wall -Wextra -Isrc -rdynamic -DNDEBUG $(OPTFLAGS)
-LIBS=-ldl $(OPTLIBS)
+CC=clang
+INCLUDE=$(shell pkg-config --cflags glib-2.0) -I/usr/local/opt/gettext/include
+
+CFLAGS=-g -O2 -Wall -Wextra -Isrc $(INCLUDE) -DNDEBUG $(OPTFLAGS)
+
+LD_FLAGS=-ldl $(OPTLIBS) $(shell pkg-config --libs glib-2.0) -L/usr/local/opt/gettext/lib
 PREFIX=./build
 
 SOURCES=$(wildcard src/**/*.c src/*.c)
@@ -9,12 +13,15 @@ TEST_SRC=$(wilcard tests/*_tests.c)
 TESTS=$(patsubst %.c,%,$(TEST_SRC))
 
 TARGET=build/libunmthread.a
-SO_TARGET=$(patsubst %.a,%.so,$(TARGET))
+# SO_TARGET=$(patsubst %.a,%.so,$(TARGET))
+EXECUTEABLE=threads
 
+
+#
 # The Target Build
-all: $(TARGET) $(SO_TARGET) tests
+all: $(TARGET) $(EXECUTEABLE)
 
-dev: CFLAGS=-g -Wall -Isrc -Wextra $(OPTFLAGS)
+dev: CFLAGS=-g -Wall -Isrc -Wextra $(OPTFLAGS) $(INCLUDE)
 dev: all
 
 $(TARGET): CFLAGS += -fPIC
@@ -23,7 +30,11 @@ $(TARGET): build $(OBJECTS)
 	ranlib $@
 
 $(SO_TARGET): $(TARGET) $(OBJECTS)
-	$(CC) -shared -o $@ $(OBJECTS)
+	$(CC) -shared -o $@ $(OBJECTS) -o $(EXECUTEABLE)
+
+
+$(EXECUTEABLE): $(OBJECTS)
+	$(CC) $(OBJECTS) -o $@
 
 build:
 	@mkdir -p build
@@ -33,7 +44,7 @@ build:
 .PHONY: tests
 tests: CFLAGS += $(TARGET)
 tests: $(TESTS)
-	sh runtests.sh
+	@echo not testing
 
 valgrind:
 	VALGRIND="valgrind --log-file=/tmp/valgrind-%p.log" $(MAKE)
@@ -41,6 +52,7 @@ valgrind:
 clean:
 	rm -rf build $(OBJECTS) $(TESTS)
 	rm -f tests/tests.lob
+	rm $(EXECUTEABLE)
 	find . -name "*.gc*" -exec rm {} \;
 	rm -rf `find . -name "*.dSYM" -print`
 

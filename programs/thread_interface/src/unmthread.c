@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <glib.h>
 #include "unmthread.h"
 #include "dbg.h"
 
@@ -13,6 +15,7 @@ int unmthread_create(unmthread_t *thr, thrfunc_t f, void *arg, void *schedinfo){
 /* Cause the current thread to yield execution to another thread if one is availble to 
  * run on this processor */
 int unmthread_yield(void){
+  debug("yielding thread");
   return 0;
 }
 
@@ -31,7 +34,7 @@ int unmthread_exit(void *retval){
 /* Return a pointer to the currently running thread. Frequently used to look up thread-specific
  * information in a hash table */
 unmthread_t *unmthread_current(void){
-  return  *unmthread_current;
+  return  0;
 }
 
 /* Basic condition primitives a la pthreads */
@@ -47,4 +50,11 @@ int unmthread_mutex_unlock(unmmutex_t *m);
 int unmthread_mutex_uninit(unmmutex_t *m);
 
 
+unmthread_t *thread_create(int mutex, int test)
+{
+  unmthread_t *thread = (unmthread_t*) malloc(sizeof(unmthread_t));
+  thread->mutex = mutex;
+  thread->test = test;
+  return thread;
+}
 
