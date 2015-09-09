@@ -21,7 +21,7 @@ EXECUTEABLE=threads
 # The Target Build
 all: $(TARGET) $(EXECUTEABLE)
 
-dev: CFLAGS=-v -g -Wall -Isrc -Wextra $(OPTFLAGS) $(INCLUDE)
+dev: CFLAGS=-v -g -Wall -Isrc -Wextra -DEBUG $(OPTFLAGS) $(INCLUDE)
 dev: all
 
 $(TARGET): CFLAGS += -fPIC
