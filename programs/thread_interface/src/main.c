@@ -7,17 +7,21 @@
 
 void spinner()
 {
+  debug("in spinner");
   int i = 0;
+  /* for(;;); */
   for(i = 0; i < 10; i++){
-    if (i == 5) unmthread_yield();
+    /* if (i == 5) unmthread_yield(); */
     printf("Thread %d: Spinning: %d\n", unmthread_current()->id, i);
   }
   return;
 }
 
 void exp_2(){
-  int i;
+  int i = 0;
+  for(;;);
   for (i = 0; i < 10; i++){
+    /* if (i == 5) unmthread_yield(); */
     printf("Thread: %d: 2 << %d: %d\n", unmthread_current()->id, i, 2 << i);
   }
   return;
@@ -30,9 +34,10 @@ int main()
   printf("testing stuff in main\n");
 
   struct unmthread *p = thread_create();
-  struct unmthread *c = thread_create();
+  /* struct unmthread *c = thread_create(); */
   int i = unmthread_create(p, (void *) spinner, (void *) 2, NULL);
-  int w = unmthread_create(c, (void *) exp_2, (void *) 2, NULL);
+  /* int w = unmthread_create(c, (void *) exp_2, (void *) 2, NULL); */
+  /* if ((i != 0) || (w != 0)) return 1; */
 
   return 0;
 
