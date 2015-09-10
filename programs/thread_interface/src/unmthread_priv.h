@@ -10,9 +10,10 @@
 /* #endif */
 
 
-/* change size of stack? */
-#define THREAD_STACK_SIZE (1024 * 1024)
-typedef enum {RUNNING, JOINABLE, WAITING, DONE} status;
+/* stack size defined from assignment, 8KB*/
+#define THREAD_STACK_SIZE (1024 * 8)
+
+typedef enum {RUNNING, DONE} status;
 typedef enum {GO, STOP} condition;
 
 struct unmthread {
@@ -20,8 +21,9 @@ struct unmthread {
   ucontext_t context;
   status status;
   void *stack;
-  void *func;
+  /* void *func; */
 };
+
 
 struct {
   condition cond;
@@ -31,11 +33,14 @@ struct unmmutex {
   int lock;
 };
 
+extern int THREAD_RUNNING;
+unmthread_t *CURRENT_THREAD;
 
 /* main queue for all threads */
-static GQueue* queue;
+GQueue* queue;
+static struct unmthread *main_thread;
 
-
-unmthread_t *thread_create(int id, status status);
-
+void context_helper(unmthread_t *thread);
 void print_thread(unmthread_t *thread);
+unmthread_t *thread_create();
+
