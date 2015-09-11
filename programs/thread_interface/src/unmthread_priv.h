@@ -8,7 +8,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ucontext.h>
+#include <sched.h>
 #include "dbg.h"
+#include "unmthread_queue.h"
 
 /* nessecary for apple ucontext as they are deprecated */
 /* #ifdef __APPLE__ */
@@ -17,14 +19,21 @@
 
 /* stack size defined from assignment, 8KB*/
 #define THREAD_STACK_SIZE (1024 * 8)
+#define null_thread (unmthread_t *)0
 
-typedef enum {GO, STOP} condition;
+typedef enum {
+    NONE,
+    RUNNING,
+    READY,
+    BLOCKED,
+    DONE
+  }t_state ;
 
 struct unmthread {
   int id;
   ucontext_t context;
-  int status;
-  int done;
+  t_state status;
+  /* int done; */
   void *ret_val;
   void *stack;
   void *f_args;
@@ -32,22 +41,34 @@ struct unmthread {
 };
 
 
-struct {
-  condition cond;
-} unmcond;
+/* struct { */
+/*   condition cond; */
+/* } unmcond; */
 
 struct unmmutex {
   int lock;
 };
 
-extern int THREAD_RUNNING;
+queue readylist;    /* the list of all ready threads */
 unmthread_t *CURRENT_THREAD;
+unmthread_t *TMP_THREAD;
+unmthread_t *MAIN_THREAD;
 
 /* main queue for all threads */
 GQueue* queue;
-static struct unmthread *main_thread;
+unmthread_t *main_thread;
 
-void context_helper(unmthread_t *thread);
-void print_thread(unmthread_t *thread);
-unmthread_t *thread_create();
+
+int wait_for_threads();
+
+typedef struct unmcond {
+  int signal; 
+}unmcond_t;
+
+typedef struct unmmutex {
+  int lock;
+}unmmutex_t;
+
+int test_and_set(int *old, int new);
+
 
