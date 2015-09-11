@@ -1,7 +1,7 @@
 CC=gcc
 INCLUDE=$(shell pkg-config --cflags glib-2.0)
 
-CFLAGS=-g -O2 -Wall -Wextra -Isrc -DNDEBUG $(OPTFLAGS) $(INCLUDE)
+CFLAGS=-g -std=gnu99 -O2 -Wall -Wextra -Isrc -DNDEBUG $(OPTFLAGS) $(INCLUDE)
 
 LDFLAGS=-ldl $(OPTLIBS) $(shell pkg-config --libs glib-2.0)
 PREFIX=./build
@@ -21,7 +21,7 @@ EXECUTEABLE=threads
 # The Target Build
 all: $(TARGET) $(EXECUTEABLE)
 
-dev: CFLAGS=-g -std=c99 -Wall -Isrc -Wextra -DEBUG $(OPTFLAGS) $(INCLUDE)
+dev: CFLAGS=-g -std=gnu99 -Wall -Isrc -Wextra -DEBUG $(OPTFLAGS) $(INCLUDE)
 dev: all
 
 $(TARGET): CFLAGS += -fPIC
@@ -30,11 +30,11 @@ $(TARGET): build $(OBJECTS)
 	ranlib $@
 
 $(SO_TARGET): $(TARGET) $(OBJECTS)
-	$(CC) -v $(EXECUTEABLE) -shared -o $@ $(OBJECTS) -o 
+	$(CC) $(EXECUTEABLE) -shared -o $@ $(OBJECTS) -o 
 
 
 $(EXECUTEABLE): $(OBJECTS)
-	$(CC) -v $(OBJECTS) -o $@ $(LDFLAGS)
+	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
 build:
 	@mkdir -p build

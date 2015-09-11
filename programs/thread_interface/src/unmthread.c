@@ -8,7 +8,7 @@ int THREAD_RUNNING = 0;
 int THREAD_COUNTER = 0;
 /* main context intialized statically */
 static ucontext_t main_context;
-ucontext_t curr_context;
+static ucontext_t curr_context;
 
 /* initializes the queue and structures... */
 void initialize()
@@ -22,39 +22,15 @@ void initialize()
 
 void thread_runner(thrfunc_t f, void *arg)
 {
-  /* THREAD_RUNNING = 1; */
   debug("Running thread with Function pointer: %p\n", (void *) &f);
-  void *ret = f(arg);
-  debug("Thread function return value: %p\n", (void *) &ret);
-  /* THREAD_RUNNING = 0; */
-  unmthread_exit(ret);
+  CURRENT_THREAD->status = 1;
+  CURRENT_THREAD->ret_val = f(CURRENT_THREAD->f_args);
+  CURRENT_THREAD->status = 0;
+  CURRENT_THREAD->done = 1;
+  debug("Thread function return value: %p\n", (void *) &CURRENT_THREAD->ret_val);
+  unmthread_yield();
 }
 
-/* wrapper function to malloc a thread */
-unmthread_t *thread_create()
-{
-  status _status = RUNNING;
-  debug("malloc thread");
-  unmthread_t *thread = (unmthread_t*) malloc(sizeof(unmthread_t));
-  thread->id = THREAD_COUNTER;
-  THREAD_COUNTER++;
-  thread->status = _status;
-  context_helper(thread);
-  return thread;
-}
-
-
-/* convenience */
-void schedule_thread()
-{
-  debug("scheudling thread");
-  unmthread_t *t = g_queue_pop_head(queue);
-  /* curr_context = CURRENT_THREAD->context; */
-  CURRENT_THREAD = t;
-  THREAD_RUNNING = 1;
-  /* unmthread_yield(); */
-
-}
 
 /* Create a thread starting at the running function with the supplied argument and scheduling 
  * information. In non-preemptive code, the created thread will not actually run until the
@@ -62,17 +38,31 @@ void schedule_thread()
 int unmthread_create(unmthread_t *thr, thrfunc_t f, void *arg, void *schedinfo)
 {
   if (!INIT) initialize();
-  /* THREAD_RUNNING = 1; */
-  /* CURRENT_THREAD = thr; */
-  debug("making context for thread");
-  debug("Function pointer: %p\n", (void *) &f);
-  g_queue_push_tail(queue, thr);
-  debug("making context");
-  makecontext(&thr->context, (void (*)(void)) &thread_runner, 1, f);
-  debug("setting context");
-  setcontext(&thr->context);
+  debug("malloc thread");
+  thr = (unmthread_t*) malloc(sizeof(unmthread_t));
+  thr->id = THREAD_COUNTER;
+  THREAD_COUNTER++;
+  thr->status = 0;
+  thr->ret_val = NULL;
+  thr->f_args = arg;
+  thr->schedule_info = schedinfo;
+  thr->done = 0;
+  getcontext(&thr->context); /*fail if the getcontext fails*/
 
-  /* unmthread_yield(); */
+  thr->context.uc_stack.ss_sp = thr->stack = malloc(THREAD_STACK_SIZE);
+  assert(thr->stack != 0); /* fail if we failed to allocate stack */
+
+  thr->context.uc_link = 0; /* we are manually going to control the execution */
+  thr->context.uc_stack.ss_size = THREAD_STACK_SIZE;
+
+
+  debug("making context for thread: %i", thr->id);
+  makecontext(&thr->context, (void (*)(void))thread_runner, 1, f);
+  g_queue_push_tail(queue, thr);
+  getcontext(&main_context);
+
+  unmthread_yield();
+  /* getcontext(&main_context); */
   return 0;
 }
 
@@ -80,24 +70,36 @@ int unmthread_create(unmthread_t *thr, thrfunc_t f, void *arg, void *schedinfo)
 /* Cause the current thread to yield execution to another thread if one is availble to 
  * run on this processor */
 int unmthread_yield(void){
-  debug("attempting to yield");
-  assert(queue);
-  /* if (THREAD_RUNNING){ */
-  /*   printf("Thread is running. Swapping to main context\n"); */
-    schedule_thread();
-    printf("Swapping thread context\n");
-    swapcontext(&CURRENT_THREAD->context, &main_context);
-    /* swapcontext(&main_context, &CURRENT_THREAD->context); */
-    printf("setting thread status\n");
+
+  if (!CURRENT_THREAD) {
+    debug("current thread not defined; scheduling");
+    CURRENT_THREAD = g_queue_pop_head(queue);
+    /* getcontext(&main_context); */
+  }
+  if (CURRENT_THREAD->status == 1){ // running thread
+    debug("attempting to yield running Thread: %i", CURRENT_THREAD->id);
+    CURRENT_THREAD->status = 0;
+    g_queue_push_tail(queue, CURRENT_THREAD);
+    CURRENT_THREAD = g_queue_pop_head(queue);
     CURRENT_THREAD->status = 1;
-    /* g_queue_push_tail(queue, CURRENT_THREAD); */
-  /* } */
-  /* else { */
-    /* debug("Thread is not running. Swapping context to thread"); */
-    /* schedule_thread(); */
-    /* swapcontext(&curr_context, &CURRENT_THREAD->context); */
-    /* g_queue_push_tail(queue, CURRENT_THREAD); */
-  /* } */
+    swapcontext(&main_context, &CURRENT_THREAD->context);
+  }
+  else{ // non-running thread
+    if(CURRENT_THREAD->done){
+      debug("Thread: %i : done", CURRENT_THREAD->id);
+    if ( g_queue_is_empty(queue) ) {
+      debug("Empty queue; returning") ;
+      CURRENT_THREAD = NULL;
+      setcontext(&main_context);
+      return 0;
+    }
+      CURRENT_THREAD = g_queue_pop_head(queue);
+      CURRENT_THREAD->status = 1;
+      swapcontext(&main_context, &CURRENT_THREAD->context);
+    }
+    debug("attempting to yield Thread: %i", CURRENT_THREAD->id);
+    swapcontext(&main_context, &CURRENT_THREAD->context);
+  }
   return 0;
 }
 
@@ -110,6 +112,10 @@ int unmthread_join(unmthread_t *thr, void **retval){
 /* Terminate execution of this thread, returning the provided argument to a thread that 
  * joins with this thread */
 int unmthread_exit(void *retval){
+  unmthread_t * head =  g_queue_peek_head(queue);
+  head->ret_val = retval;
+  debug("exiting exit via yield");
+  unmthread_yield();
   return 0;
 }
 
@@ -118,7 +124,7 @@ int unmthread_exit(void *retval){
 unmthread_t *unmthread_current(void){
   /* wrong; need to handle differently */
   assert(CURRENT_THREAD);
-  debug("returning current thread");
+  /* debug("returning current thread"); */
   return CURRENT_THREAD;
 }
 
@@ -128,20 +134,5 @@ void print_thread(unmthread_t *thread)
 {
   printf("Thread ID: %d\n", thread->id);
   printf("Thread status: %d\n", thread->status);
-}
-
-
-
-/* simple helper function to initialize the context for a new thread */
-void context_helper(unmthread_t *thread)
-{
-  
-  getcontext(&thread->context); /*fail if the getcontext fails*/
-
-  thread->context.uc_stack.ss_sp = thread->stack = malloc(THREAD_STACK_SIZE);
-  assert(thread->stack != 0); /* fail if we failed to allocate stack */
-
-  thread->context.uc_link = 0; /* we are manually going to control the execution */
-  thread->context.uc_stack.ss_size = THREAD_STACK_SIZE;
 }
 
