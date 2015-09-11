@@ -43,7 +43,7 @@ GQueue* queue;
 unmthread_t *CURRENT_THREAD;
 unmthread_t *TMP_THREAD;
 unmthread_t *MAIN_THREAD;
-unmthread_t *main_thread;
+unmthread_t *NEXT_THREAD;
 
 int wait_for_threads();
 

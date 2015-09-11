@@ -36,16 +36,20 @@ int main()
 
   struct unmthread *a; //h= thread_create();
   struct unmthread *b; //= thread_create();
+  struct unmthread *c; //= thread_create();
   /* struct unmthread *c; //= thread_create(); */
   /* struct unmthread *d; //= thread_create(); */
   unmthread_create(a, (void *) exp_2, NULL, NULL);
   debug("created thread 1");
   unmthread_create(b, (void *) spinner, NULL, NULL);
   debug("created thread 2");
+  unmthread_create(c, (void *) spinner, NULL, NULL);
+  debug("created thread 3");
   /* unmthread_create(c, (void *) exp_2, NULL, NULL); */
   /* debug("created thread 3"); */
   /* unmthread_create(d, (void *) exp_2, NULL, NULL); */
 
+  unmthread_yield();
   /* for(;;); */
   debug ("exiting");
 
