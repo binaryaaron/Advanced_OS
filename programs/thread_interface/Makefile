@@ -1,7 +1,7 @@
 CC=gcc
 INCLUDE=$(shell pkg-config --cflags glib-2.0)
 
-CFLAGS=-g -std=gnu99 -O2 -Wall -Wextra -Isrc -DNDEBUG $(OPTFLAGS) $(INCLUDE)
+CFLAGS=-g -std=gnu99 -O2 -Wall -Isrc -DNDEBUG $(OPTFLAGS) $(INCLUDE)
 
 LDFLAGS=-ldl $(OPTLIBS) $(shell pkg-config --libs glib-2.0)
 PREFIX=./build
@@ -17,8 +17,6 @@ TARGET=build/libunmthread.a
 EXECUTEABLE=threads
 
 
-#
-# The Target Build
 all: $(TARGET) $(EXECUTEABLE)
 
 dev: CFLAGS=-g -std=gnu99 -Wall -Isrc -Wextra -DEBUG $(OPTFLAGS) $(INCLUDE)

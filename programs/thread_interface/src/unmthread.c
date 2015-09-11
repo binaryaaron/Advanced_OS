@@ -11,29 +11,23 @@ int THREAD_RUNNING = 0;
 int THREAD_COUNTER = 0;
 int AM_WAITING = 0;
 
-/* main context intialized statically */
+/* main context initialized statically */
 static ucontext_t main_context;
-static ucontext_t curr_context;
-/* struct unmthread_t *TMP_THREAD; */
 
 /* initializes the queue and structures... */
 void initialize()
 {
-   debug("intializing thread library");
+   debug("initializing thread library");
    queue = g_queue_new();
    getcontext(&main_context);
    INIT = 1;
 }
 
 
-void thread_runner(thrfunc_t f, void *arg)
+void thread_runner(thrfunc_t f)
 {
-  /* debug("Running thread %i with Function pointer: %p\n", */
-        /* CURRENT_THREAD->id, (void *) &f); */
   CURRENT_THREAD->status = RUNNING;
   CURRENT_THREAD->ret_val = f(CURRENT_THREAD->f_args);
-  /* CURRENT_THREAD->done = 1; */
-  /* debug("Thread function return value: %p\n", (void *) &CURRENT_THREAD->ret_val); */
   unmthread_exit(CURRENT_THREAD->ret_val);
 }
 

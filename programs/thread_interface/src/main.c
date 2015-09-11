@@ -39,7 +39,6 @@ int main()
 {
   struct unmthread *a; //h= thread_create();
   struct unmthread *b; //= thread_create();
-  struct unmthread *c; //= thread_create();
   /* struct unmthread *c; //= thread_create(); */
   /* struct unmthread *d; //= thread_create(); */
   unmthread_mutex_init(&the_mutex);
@@ -48,17 +47,10 @@ int main()
   debug("created thread 1");
   unmthread_create(b, (void *) spinner, NULL, NULL);
   debug("created thread 2");
-  /* unmthread_create(c, (void *) spinner, NULL, NULL); */
-  /* debug("created thread 3"); */
-  /* unmthread_create(c, (void *) exp_2, NULL, NULL); */
-  /* debug("created thread 3"); */
-  /* unmthread_create(d, (void *) exp_2, NULL, NULL); */
-
 
   /* unmthread_yield(); */
-  int rval = 0;
-  unmthread_join(&a, (void *) rval);
-  unmthread_join(&b, (void *) rval);
+  unmthread_join(&a, NULL);
+  unmthread_join(&b, NULL);
   debug ("exiting");
 
   return 0;
