@@ -1,5 +1,9 @@
+/* Advanced Operating Systems
+ * Fall 2015,
+ * Programming assignment 1
+ * Aaron Gonzales
+ */
 #include "unmthread.h"
-#include <assert.h>
 
 
 int INIT = 0;
@@ -48,6 +52,7 @@ int unmthread_create(unmthread_t *thr, thrfunc_t f, void *arg, void *schedinfo)
   thr->ret_val = NULL;
   thr->f_args = arg;
   thr->schedule_info = schedinfo;
+  thr->join_data = NULL;
   getcontext(&thr->context);
 
   thr->context.uc_stack.ss_sp = thr->stack = malloc(THREAD_STACK_SIZE);
@@ -73,12 +78,12 @@ int unmthread_create(unmthread_t *thr, thrfunc_t f, void *arg, void *schedinfo)
 int unmthread_yield(void){
   if (!CURRENT_THREAD){
     CURRENT_THREAD = g_queue_pop_head(queue);
+    if(!CURRENT_THREAD) return -1;
     swapcontext(&main_context, &CURRENT_THREAD->context);
   }
   debug("Beginning yield; Current thread: %i", CURRENT_THREAD->id);
 
   if (g_queue_get_length(queue) > 0){
-    debug("queue is not empty ; thread %i", CURRENT_THREAD->id);
     NEXT_THREAD = g_queue_pop_head(queue);
   }
 
@@ -89,10 +94,6 @@ int unmthread_yield(void){
     g_queue_push_tail(queue, TMP_THREAD);
     swapcontext(&TMP_THREAD->context, &NEXT_THREAD->context);
   }
-  /* else{ */
-  /*   debug("swapping threads with main; thread %i", CURRENT_THREAD->id); */
-  /*   swapcontext(&main_context, &NEXT_THREAD->context); */
-  /* } */
 
   return 0;
 }
@@ -100,6 +101,13 @@ int unmthread_yield(void){
 /* Wait for termination of the supplied thread, returning its provided return value
  * to the caller in the retval argument */
 int unmthread_join(unmthread_t *thr, void **retval){
+  if(!thr){ 
+    printf("Thread is uninitialized");
+    return -1;
+  }
+  /* this is a bad hack to even get it moving at all */
+  if (thr->status != DONE) unmthread_yield(); 
+  thr->join_data = *retval;
   return 0;
 }
 
@@ -110,16 +118,10 @@ int unmthread_exit(void *retval){
   if (g_queue_get_length(queue) > 0){
   }
   unmthread_t *next =  g_queue_pop_head(queue);
+  if (next == NULL) return 0;
   next->ret_val = retval;
-  if (CURRENT_THREAD != next){
-    debug("swapping threads in exit; thread %i, thread %i",
-        CURRENT_THREAD->id, next->id);
-    TMP_THREAD = CURRENT_THREAD;
-    CURRENT_THREAD = next;
-    swapcontext(&TMP_THREAD->context, &NEXT_THREAD->context);
-  }
-  debug("exiting exit via yield");
-  /* unmthread_yield(); */
+  debug("exiting exit ");
+  unmthread_yield();
   return 0;
 }
 
@@ -139,7 +141,7 @@ int wait_for_threads()
   while (g_queue_get_length(queue) >= 1){
     unmthread_yield();
     debug("Waiting for threads...");
-  } 
+  }
   debug("exiting Waiting for threads...");
   AM_WAITING = 0;
   return 0;
@@ -156,8 +158,12 @@ int unmthread_cond_uninit(unmcond_t *c);
 int unmthread_mutex_init(unmmutex_t *m){
   /* lock is zero and available */
   m->lock = 0;
+  return 0;
 }
 
+/* simultaneously tests and sets a lock 
+ * common idiom.
+ * */
 int test_and_set(int *old_val, int new)
 {
   int old = *old_val;
@@ -165,9 +171,12 @@ int test_and_set(int *old_val, int new)
   return old;
 }
 
+/* this is a yielding lock. It mostly works */
 int unmthread_mutex_lock(unmmutex_t *m)
 {
-  while (test_and_set(&m->lock, 1) == 1) sched_yield();
+  while (test_and_set(&m->lock, 1) == 1) {
+    unmthread_yield();
+  }
   return 0;
 }
 
@@ -177,5 +186,11 @@ int unmthread_mutex_unlock(unmmutex_t *m)
   return 0;
 }
 
-int unmthread_mutex_uninit(unmmutex_t *m);
+/* duplicate as there were no condition vars */
+int unmthread_mutex_uninit(unmmutex_t *m)
+{
+  m->lock = 0;
+  return 0;
+}
+
 

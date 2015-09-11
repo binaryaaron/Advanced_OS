@@ -9,12 +9,8 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include <sched.h>
+#include <assert.h>
 #include "dbg.h"
-
-/* nessecary for apple ucontext as they are deprecated */
-/* #ifdef __APPLE__ */
-/* #endif */
-
 
 /* stack size defined from assignment, 8KB*/
 #define THREAD_STACK_SIZE (1024 * 8)
@@ -36,6 +32,7 @@ struct unmthread {
   void *ret_val;
   void *stack;
   void *f_args;
+  void *join_data;
   void *schedule_info;
 };
 
@@ -56,5 +53,3 @@ typedef struct unmmutex {
 } unmmutex_t;
 
 int test_and_set(int *old, int new);
-
-
