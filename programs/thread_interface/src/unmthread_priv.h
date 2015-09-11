@@ -10,7 +10,6 @@
 #include <ucontext.h>
 #include <sched.h>
 #include "dbg.h"
-#include "unmthread_queue.h"
 
 /* nessecary for apple ucontext as they are deprecated */
 /* #ifdef __APPLE__ */
@@ -40,34 +39,21 @@ struct unmthread {
   void *schedule_info;
 };
 
-
-/* struct { */
-/*   condition cond; */
-/* } unmcond; */
-
-struct unmmutex {
-  int lock;
-};
-
-queue readylist;    /* the list of all ready threads */
+GQueue* queue;
 unmthread_t *CURRENT_THREAD;
 unmthread_t *TMP_THREAD;
 unmthread_t *MAIN_THREAD;
-
-/* main queue for all threads */
-GQueue* queue;
 unmthread_t *main_thread;
-
 
 int wait_for_threads();
 
 typedef struct unmcond {
   int signal; 
-}unmcond_t;
+} unmcond_t;
 
 typedef struct unmmutex {
   int lock;
-}unmmutex_t;
+} unmmutex_t;
 
 int test_and_set(int *old, int new);
 

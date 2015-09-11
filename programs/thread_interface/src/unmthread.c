@@ -204,24 +204,23 @@ int unmthread_mutex_init(unmmutex_t *m){
   m->lock = 0;
 }
 
-/*
- * Simple test and set. works by testing and updating at nearly the same time
- * so a spinlock can be established with the extremely simple unmmutex struct.
- */
-int test_and_set(int *old, int new)
+int test_and_set(int *old_val, int new)
 {
-  int old = *old; 
-  *old = new;
+  int old = *old_val;
+  *old_val = new;
   return old;
 }
 
 int unmthread_mutex_lock(unmmutex_t *m)
 {
   while (test_and_set(&m->lock, 1) == 1) sched_yield();
+  return 0;
 }
-int unmthread_mutex_unlock(unmmutex_t *m);
+
+int unmthread_mutex_unlock(unmmutex_t *m)
 {
   m->lock = 0;
+  return 0;
 }
 
 int unmthread_mutex_uninit(unmmutex_t *m);
