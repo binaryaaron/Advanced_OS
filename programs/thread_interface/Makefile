@@ -30,11 +30,11 @@ $(TARGET): build $(OBJECTS)
 	ranlib $@
 
 $(SO_TARGET): $(TARGET) $(OBJECTS)
-	$(CC) -v $(EXECUTEABLE) -shared -o $@ $(OBJECTS) -o 
+	$(CC) $(EXECUTEABLE) -shared -o $@ $(OBJECTS) -o 
 
 
 $(EXECUTEABLE): $(OBJECTS)
-	$(CC) -v $(OBJECTS) -o $@ $(LDFLAGS)
+	$(CC) $(OBJECTS) -o $@ $(LDFLAGS)
 
 build:
 	@mkdir -p build

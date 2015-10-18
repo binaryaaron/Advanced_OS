@@ -1,4 +1,9 @@
+#ifdef __APPLE__
 #define _XOPEN_SOURCE 500
+#endif
+#ifdef __linux__
+#define _XOPEN_SOURCE 700
+#endif
 #include <glib.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,15 +18,17 @@
 /* stack size defined from assignment, 8KB*/
 #define THREAD_STACK_SIZE (1024 * 8)
 
-typedef enum {RUNNING, DONE} status;
 typedef enum {GO, STOP} condition;
 
 struct unmthread {
   int id;
   ucontext_t context;
-  status status;
+  int status;
+  int done;
+  void *ret_val;
   void *stack;
-  /* void *func; */
+  void *f_args;
+  void *schedule_info;
 };
 
 
